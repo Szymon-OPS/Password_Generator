@@ -1,6 +1,7 @@
 from tkinter import *
 from random import choice, randint, shuffle
 import pyperclip
+import json
 
 # ---------------------------- PASSWORD GENERATOR ----------------------
 def generate_password():
@@ -22,6 +23,53 @@ def generate_password():
     password_entry.insert(0, string=password)
     # Automatically copy generated password using pyperclip package
     pyperclip.copy(password)
+
+# ---------------------------- SAVE PASSWORD ------------------------------- #
+# Save function that saves:
+# Website | Email/Username | Password
+# in data.json file
+# clears up all text from input fields (email exception)
+
+def save_password():
+    # Get hold of user entries
+    website = website_entry.get()
+    email = email_entry.get()
+    password = password_entry.get()
+    # Create nested dictionary structure
+    new_data = {
+        website: {
+            'email': email,
+            'password': password
+
+    }}
+
+    try:
+        # Use read mode so that data in json file will not be overwritten
+        with open("data.json", "r") as data_file:
+            # Read existing data from json file and converts to python dictionary
+            data = json.load(data_file)
+
+    except FileNotFoundError:
+        # FileNotFoundError = during first try json file was not yet created/is missing = try block did not succeed
+        # Create json file using write mode
+        with open("data.json", "w") as data_file:
+            # Save data in json file:
+            json.dump(new_data, data_file, indent=4)
+
+    else:
+        # Try block succeeded and continues here
+        # Update existing data in json file
+        data.update(new_data)
+        with open("data.json", "w") as data_file:
+            # Save data to json file
+            json.dump(data, data_file, indent=4)
+
+    finally:
+        # Clear fields after adding to json file
+        website_entry.delete(0, END)
+        # Optionally email entry can be cleared
+        # email_entry.delete(0, END)
+        password_entry.delete(0, END)
 
 # ---------------------------- UI SETUP --------------------------------
 window = Tk()
@@ -72,8 +120,8 @@ password_entry.grid(column=1, row=3)
 generate_button = Button(text="Generate Password", command=generate_password)
 generate_button.grid(column=2, row=3)
 
-## Add - will save password when pressed
-add_button = Button(width=37, text="Add")
+## Calls save_password() when pressed
+add_button = Button(width=37, text="Add", command=save_password)
 add_button.grid(column=1, row=4, columnspan=2)
 
 ## Search - will find password when pressed
