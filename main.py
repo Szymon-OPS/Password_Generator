@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter import messagebox
 from random import choice, randint, shuffle
 import pyperclip
 import json
@@ -42,34 +43,60 @@ def save_password():
             'password': password
 
     }}
+    
+    if len(website) == 0 or len(password) == 0:
+        messagebox.showinfo(title="Oops", message="Don't leave the fields empty.")
+    else:
+        # Add data into data.json file, read/write modes depending on whether
+        # the file already exists and get hold of the data:
+        try:
+            # Use read mode so that data in json file will not be overwritten
+            with open("data.json", "r") as data_file:
+                # Read existing data from json file and converts to python dictionary
+                data = json.load(data_file)
 
+        except FileNotFoundError:
+            # FileNotFoundError = during first try json file was not yet created/is missing = try block did not succeed
+            # Create json file using write mode
+            with open("data.json", "w") as data_file:
+                # Save data in json file:
+                json.dump(new_data, data_file, indent=4)
+
+        else:
+            # Try block succeeded and continues here
+            # Update existing data in json file
+            data.update(new_data)
+            with open("data.json", "w") as data_file:
+                # Save data to json file
+                json.dump(data, data_file, indent=4)
+
+        finally:
+            # Clear fields after adding to json file
+            website_entry.delete(0, END)
+            # Optionally email entry can be cleared
+            # email_entry.delete(0, END)
+            password_entry.delete(0, END)
+
+# ---------------------------- FIND PASSWORD ------------------------------- #
+# Find password which is already in data.json
+
+def find_password():
     try:
-        # Use read mode so that data in json file will not be overwritten
         with open("data.json", "r") as data_file:
             # Read existing data from json file and converts to python dictionary
             data = json.load(data_file)
-
     except FileNotFoundError:
-        # FileNotFoundError = during first try json file was not yet created/is missing = try block did not succeed
-        # Create json file using write mode
-        with open("data.json", "w") as data_file:
-            # Save data in json file:
-            json.dump(new_data, data_file, indent=4)
-
+        messagebox.showinfo(title='Error', message='No Data File Found.')
     else:
-        # Try block succeeded and continues here
-        # Update existing data in json file
-        data.update(new_data)
-        with open("data.json", "w") as data_file:
-            # Save data to json file
-            json.dump(data, data_file, indent=4)
-
-    finally:
-        # Clear fields after adding to json file
-        website_entry.delete(0, END)
-        # Optionally email entry can be cleared
-        # email_entry.delete(0, END)
-        password_entry.delete(0, END)
+        for website in data:
+            if website == website_entry.get():
+                email = data[website]['email']
+                password = data[website]['password']
+                messagebox.showinfo(title="Search", message=f"Email: {email}\nPassword: {password}")
+                break
+            else:
+                messagebox.showinfo(title="Search", message=f'No details for the {website_entry.get()} exists.')
+                break
 
 # ---------------------------- UI SETUP --------------------------------
 window = Tk()
@@ -124,8 +151,8 @@ generate_button.grid(column=2, row=3)
 add_button = Button(width=37, text="Add", command=save_password)
 add_button.grid(column=1, row=4, columnspan=2)
 
-## Search - will find password when pressed
-search_button = Button(text="Search", width=13)
+## Calls find_password() when pressed
+search_button = Button(text="Search", width=13, command=find_password)
 search_button.grid(column=2, row=1, columnspan=2)
 
 window.mainloop()
